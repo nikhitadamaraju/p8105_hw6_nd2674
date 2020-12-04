@@ -38,9 +38,20 @@ homicide_df =
 
 ## Problem 2
 
+**Loading and cleaning dataset**
+
+The dataset consisting of weights of children has 20 variables out of which, 4 variables - `babysex`, `frace`, `mrace` and `malform` are categorical. There are no missing values in the dataset.
+
 ```{r message = FALSE}
 weight_df = 
-  read_csv('./datasets/birthweight.csv')
+  read_csv('./datasets/birthweight.csv') %>%
+  mutate(
+    babysex = factor(babysex),
+    frace = factor(frace),
+    mrace = factor(mrace),
+    malform = factor(malform)
+  ) %>%
+  drop_na()
 ```
 
 ## Problem 3
