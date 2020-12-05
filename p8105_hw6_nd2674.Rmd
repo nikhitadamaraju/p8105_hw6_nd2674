@@ -13,6 +13,7 @@ library(tidyverse)
 library(dplyr)
 library(stringr)
 library(ggplot2)
+library(modelr)
 
 
 theme_set(theme_bw() + theme(legend.position = "bottom"))
@@ -79,7 +80,7 @@ The dataset consisting of weights of children has 20 variables out of which, 4 v
 
 **Identifying predictors of interest**
 
-For categorical variables, based on previous studies, there is an indication that maternal ethnicity can influence the weight of the baby. For numerical variables, we look at the correlation with the outcome to identify variables that are independent correlating with the outcome. We also omit variables `pnulbw` and `pnumsga` due to large number of values with 0.
+For categorical variables, based on previous studies, there is an indication that ethnicity can influence the weight of the baby. For numerical variables, we look at the correlation with the outcome to identify variables that are independent correlating with the outcome. We also omit variables `pnulbw` and `pnumsga` due to large number of values with 0.
 
 ```{r}
 # Selecting numerical variables 
@@ -88,22 +89,67 @@ weight_df %>%
   cor() %>% round(digits = 2) %>% knitr::kable()
 ```
 
-Based on the results above, we pick our predictors as - bhead, blength, ga_weeks, wtgain, babysex, mrace
+Based on the results above, we pick our predictors as - bhead, blength, gaweeks, wtgain, babysex and the categorical variable - mrace
 
 **Linear model**
 
 ```{r}
-
+main_model = lm(bwt ~ bhead + blength + gaweeks + wtgain + mrace, data = weight_df)
 ```
-
-
 
 **Model residuals against fitted values**
 
+```{r message = FALSE}
+weight_df %>%
+  modelr::add_residuals(main_model) %>% 
+  modelr::add_predictions(main_model) %>%
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point() +
+  labs(x = 'Fitted values', y = 'Residuals', title = 'Residuals vs Fitted values')
+
+
+```
 
 ### Comparison of model with other models 
 
+```{r}
+model1 = lm(bwt ~ blength + gaweeks, data = weight_df)
+model2 = lm(bwt ~ bhead*blength*babysex, data = weight_df)
 
+cv_df =
+  crossv_mc(weight_df, 10) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df = 
+  cv_df %>%
+  mutate(
+    main_model  = map(train, ~lm(bwt ~ bhead + blength + gaweeks + wtgain + mrace, data = .x)),
+    model1 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    model2 = map(train, ~lm(bwt ~ bhead*blength*babysex, data = weight_df))) %>%
+  mutate(
+    rmse_main = map2_dbl(main_model, test, ~rmse(model = .x, data = .y)),
+    rmse_model1 = map2_dbl(model1, test, ~rmse(model = .x, data = .y)),
+    rmse_model2 = map2_dbl(model2, test, ~rmse(model = .x, data = .y)))
+```
+
+**Cross-validated predicted error vs model of choice**
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin() +
+  labs(x = 'model', y = 'RMSE', title = 'Cross-validated predicted error')
+```
+
+Based on the plot above, it appears that our model of choice `main_model` has the least mean RMSE out when compared to the other two models.
 
 ## Problem 3
 
