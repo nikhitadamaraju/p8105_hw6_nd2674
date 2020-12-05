@@ -165,7 +165,37 @@ weather_df =
   mutate(
     name = recode(id, USW00094728 = "CentralPark_NY"),
     tmin = tmin / 10,
-    tmax = tmax / 10) %>%
-  select(name, id, everything())
+    tmax = tmax / 10) 
+
+weather_df = 
+  weather_df %>%
+  select(tmin, tmax)  # Selecting tmin and tmax as the only variables of interest
 ```
+
+Creating dataframe to draw 5000 bootstrapped samples and creating measures of interest
+
+```{r message = FALSE}
+weather_df %>%
+  modelr::bootstrap(n = 100) %>%
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
+    results = map(models, broom::tidy)) %>%
+  select(-strap, -models) %>% 
+  unnest(results) 
+
+```
+
+
+
+
+The boostrap is helpful when you’d like to perform inference for a parameter / value / summary that doesn’t have an easy-to-write-down distribution in the usual repeated sampling framework. We’ll focus on a simple linear regression with tmax as the response and tmin as the predictor, and are interested in the distribution of two quantities estimated from these data:
+
+)
+
+Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂2
+ and log(β̂0∗β̂1)
+. Note: broom::glance() is helpful for extracting r̂2
+ from a fitted regression, and broom::tidy() (with some additional wrangling) should help in computing log(β̂0∗β̂1)
+.
+
 
