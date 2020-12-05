@@ -40,19 +40,70 @@ homicide_df =
 
 **Loading and cleaning dataset**
 
-The dataset consisting of weights of children has 20 variables out of which, 4 variables - `babysex`, `frace`, `mrace` and `malform` are categorical. There are no missing values in the dataset.
-
 ```{r message = FALSE}
 weight_df = 
   read_csv('./datasets/birthweight.csv') %>%
   mutate(
-    babysex = factor(babysex),
-    frace = factor(frace),
-    mrace = factor(mrace),
-    malform = factor(malform)
+    babysex = as.factor(case_when(
+      babysex == 1 ~ 'male',
+      babysex == 2 ~ 'female'
+    )),
+    
+    frace = as.factor(case_when(
+      frace == 1 ~ 'White',
+      frace == 2 ~ 'Black',
+      frace == 3 ~ 'Asian',
+      frace == 4 ~ 'Puerto Rican',
+      frace == 8 ~ 'Other',
+      frace == 9 ~ 'Unknown')),
+    
+    mrace = as.factor(case_when(
+      mrace == 1 ~ 'White',
+      mrace == 2 ~ 'Black',
+      mrace == 3 ~ 'Asian',
+      mrace == 4 ~ 'Puerto Rican',
+      mrace == 8 ~ 'Other',
+      mrace == 9 ~ 'Unknown')),
+    
+    malform = as.factor(case_when(
+      malform == 0 ~ 'absent',
+      malform == 1 ~ 'present'
+    ))
   ) %>%
   drop_na()
 ```
+
+The dataset consisting of weights of children has 20 variables out of which, 4 variables - `babysex`, `frace`, `mrace` and `malform` are categorical. There are no missing values in the dataset and it consists of `r nrow(weight_df)` rows.
+
+### Linear model
+
+**Identifying predictors of interest**
+
+For categorical variables, based on previous studies, there is an indication that maternal ethnicity can influence the weight of the baby. For numerical variables, we look at the correlation with the outcome to identify variables that are independent correlating with the outcome. We also omit variables `pnulbw` and `pnumsga` due to large number of values with 0.
+
+```{r}
+# Selecting numerical variables 
+weight_df %>%
+  select(-c(babysex, frace, mrace, malform, pnumlbw, pnumsga)) %>%
+  cor() %>% round(digits = 2) %>% knitr::kable()
+```
+
+Based on the results above, we pick our predictors as - bhead, blength, ga_weeks, wtgain, babysex, mrace
+
+**Linear model**
+
+```{r}
+
+```
+
+
+
+**Model residuals against fitted values**
+
+
+### Comparison of model with other models 
+
+
 
 ## Problem 3
 
