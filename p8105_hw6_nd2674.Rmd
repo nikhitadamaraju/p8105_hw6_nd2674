@@ -172,30 +172,69 @@ weather_df =
   select(tmin, tmax)  # Selecting tmin and tmax as the only variables of interest
 ```
 
-Creating dataframe to draw 5000 bootstrapped samples and creating measures of interest
+**Creating dataframe to draw 5000 bootstrapped samples and creating measures of interest**
+
+### Distribution of r-squared
 
 ```{r message = FALSE}
-weather_df %>%
+bootstrap_rsq = 
+  weather_df %>%
   modelr::bootstrap(n = 100) %>%
   mutate(
     models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
-    results = map(models, broom::tidy)) %>%
-  select(-strap, -models) %>% 
-  unnest(results) 
+    results = map(models, broom::glance),
+    ) %>%
+  select(-strap, -models) %>%
+  unnest(results) %>%
+  select(r.squared)
+
+# Plot 
+bootstrap_rsq %>%
+  ggplot(aes(x = r.squared)) +
+  geom_histogram() +
+  labs(title = "distribution of r.squared")
+
+# 95% CI
 
 ```
 
 
+### Distribution of log term
 
+```{r}
+bootstrap_log = 
+  weather_df %>%
+  modelr::bootstrap(n = 100) %>%
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
+    results = map(models, broom::tidy),
+    ) %>%
+  select(-strap, -models) %>%
+  unnest(results) 
 
-The boostrap is helpful when you’d like to perform inference for a parameter / value / summary that doesn’t have an easy-to-write-down distribution in the usual repeated sampling framework. We’ll focus on a simple linear regression with tmax as the response and tmin as the predictor, and are interested in the distribution of two quantities estimated from these data:
+bootstrap_log_tidy = 
+  bootstrap_log %>%
+  select(-statistic, -p.value, -std.error) %>%
+  group_by(.id) %>%
+  pivot_wider(
+    names_from = term,
+    values_from = estimate
+  ) 
 
-)
+colnames(bootstrap_log_tidy) = c("id","B0","B1")
 
-Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂2
- and log(β̂0∗β̂1)
-. Note: broom::glance() is helpful for extracting r̂2
- from a fitted regression, and broom::tidy() (with some additional wrangling) should help in computing log(β̂0∗β̂1)
-.
+bootstrap_log_tidy = 
+  bootstrap_log_tidy %>%
+  mutate(
+    log_term = log(B0*B1)
+  ) 
+
+bootstrap_log_tidy %>%
+  ggplot(aes(x = log_term)) +
+  geom_histogram() +
+  labs(title = "distribution of log_term")
+  
+```
+
 
 
