@@ -261,9 +261,12 @@ bootstrap_rsq %>%
   labs(title = "distribution of r.squared")
 
 # 95% CI
+ci_lower = quantile(pull(bootstrap_rsq, r.squared), 0.025)
+ci_upper = quantile(pull(bootstrap_rsq, r.squared), 0.975)
 
 ```
 
+Quantile estimates for r-squared are `r ci_lower` , `r ci_upper`
 
 ### Distribution of log term
 
@@ -300,7 +303,11 @@ bootstrap_log_tidy %>%
   geom_histogram() +
   labs(title = "distribution of log_term")
   
+# 95% CI
+ci_lower = quantile(pull(bootstrap_log_tidy, log_term), 0.025)
+ci_upper = quantile(pull(bootstrap_log_tidy, log_term), 0.975)
+
 ```
 
-
+Quantile estimates for log_term are `r ci_lower` , `r ci_upper`
 
