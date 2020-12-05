@@ -245,7 +245,7 @@ weather_df =
 ```{r message = FALSE}
 bootstrap_rsq = 
   weather_df %>%
-  modelr::bootstrap(n = 100) %>%
+  modelr::bootstrap(n = 5000) %>%
   mutate(
     models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
     results = map(models, broom::glance),
@@ -273,7 +273,7 @@ Quantile estimates for r-squared are `r ci_lower` , `r ci_upper`
 ```{r}
 bootstrap_log = 
   weather_df %>%
-  modelr::bootstrap(n = 100) %>%
+  modelr::bootstrap(n = 5000) %>%
   mutate(
     models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
     results = map(models, broom::tidy),
